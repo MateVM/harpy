@@ -23,8 +23,8 @@ import Foreign.Ptr
 #ifndef __HADDOCK__
 
 $(callDecl "callAsVoid" [t|()|])
-$(callDecl "callAsWord32ToWord32" [t|Word32 -> Word32|])
-$(callDecl "callAs7PtrToVoid" [t|forall a b c d e f g . Ptr a -> Ptr b -> Ptr c -> Ptr d -> Ptr e -> Ptr f -> Ptr g -> () |])
+-- $(callDecl "callAsWord32ToWord32" [t|Word32 -> Word32|])
+-- $(callDecl "callAs7PtrToVoid" [t|forall a b c d e f g . Ptr a -> Ptr b -> Ptr c -> Ptr d -> Ptr e -> Ptr f -> Ptr g -> () |])
 
 #else
 

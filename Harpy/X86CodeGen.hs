@@ -651,7 +651,7 @@ x86_cmpxchg_membase_reg :: Word8 -> Word32 -> Word8 -> CodeGen e s ()
 x86_cmpxchg_membase_reg basereg disp reg =
     emit8 0x0f >> emit8 0xb1 >> x86_membase_emit reg basereg disp
 
-x86_xchg :: Num a => a -> CodeGen e s ()
+x86_xchg :: (Eq a, Num a) => a -> CodeGen e s ()
 x86_xchg size = if size == 1 then emit8 0x86 else emit8 0x87
 
 x86_xchg_reg_reg dreg reg size =
@@ -661,7 +661,7 @@ x86_xchg_mem_reg mem reg size =
 x86_xchg_membase_reg basereg disp reg size =
     do x86_xchg size ; x86_membase_emit reg basereg disp
 
-x86_xadd :: Num a => a -> CodeGen e s ()
+x86_xadd :: (Eq a, Num a) => a -> CodeGen e s ()
 x86_xadd size = do emit8 0x0f ; if size == 1 then emit8 0xc0 else emit8 0xc1
 x86_xadd_reg_reg dreg reg size = x86_xadd size >> x86_reg_emit reg dreg
 x86_xadd_mem_reg mem reg size = x86_xadd size >> x86_mem_emit reg mem
@@ -871,7 +871,7 @@ x86_div_membase basereg disp is_signed =
     do emit8 0xf7
        x86_membase_emit (6 + (if is_signed then 1 else 0)) basereg disp
 
-x86_mov1 :: Num t => t -> CodeGen e s ()
+x86_mov1 :: (Eq t, Num t) => t -> CodeGen e s ()
 x86_mov1 size =
     case size of
          1 -> emit8 0x88
@@ -879,7 +879,7 @@ x86_mov1 size =
          4 -> emit8 0x89
          _ -> failCodeGen (PP.text "invalid operand size")
        
-x86_mov2 :: Num t => t -> CodeGen e s ()
+x86_mov2 :: (Eq t, Num t) => t -> CodeGen e s ()
 x86_mov2 size =
     case size of
          1 -> emit8 0x8a
@@ -887,42 +887,42 @@ x86_mov2 size =
          4 -> emit8 0x8b
          _ -> failCodeGen (PP.text "invalid operand size")
        
-x86_mov_mem_reg :: (Num t) => Word32 -> Word8 -> t -> CodeGen e s ()
+x86_mov_mem_reg :: (Eq t, Num t) => Word32 -> Word8 -> t -> CodeGen e s ()
 x86_mov_mem_reg mem reg size =        
     do x86_mov1 size ; x86_mem_emit reg mem   
 
-x86_mov_regp_reg :: (Num t) => Word8 -> Word8 -> t -> CodeGen e s ()
+x86_mov_regp_reg :: (Eq t, Num t) => Word8 -> Word8 -> t -> CodeGen e s ()
 x86_mov_regp_reg regp reg size =      
     do x86_mov1 size ; x86_regp_emit reg regp
 
-x86_mov_reg_regp :: (Num t) => Word8 -> Word8 -> t -> CodeGen e s ()
+x86_mov_reg_regp :: (Eq t, Num t) => Word8 -> Word8 -> t -> CodeGen e s ()
 x86_mov_reg_regp reg regp size =      
     do x86_mov2 size ; x86_regp_emit reg regp
 
-x86_mov_membase_reg :: (Num t) => Word8 -> Word32 -> Word8 -> t -> CodeGen e s ()
+x86_mov_membase_reg :: (Eq t, Num t) => Word8 -> Word32 -> Word8 -> t -> CodeGen e s ()
 x86_mov_membase_reg basereg disp reg size =   
     do x86_mov1 size ; x86_membase_emit reg basereg disp      
 
-x86_mov_memindex_reg :: (Num t) => Word8 -> Word32 -> Word8 -> Word8 -> Word8 -> t -> CodeGen e s ()
+x86_mov_memindex_reg :: (Eq t, Num t) => Word8 -> Word32 -> Word8 -> Word8 -> Word8 -> t -> CodeGen e s ()
 x86_mov_memindex_reg basereg disp indexreg shft reg size =   
     do x86_mov1 size ; x86_memindex_emit reg basereg disp indexreg shft
 
-x86_mov_reg_reg :: (Num t) => Word8 -> Word8 -> t -> CodeGen e s ()
+x86_mov_reg_reg :: (Eq t, Num t) => Word8 -> Word8 -> t -> CodeGen e s ()
 x86_mov_reg_reg dreg reg size =       
     do x86_mov2 size
        x86_reg_emit dreg reg  
 
-x86_mov_reg_mem :: (Num t) => Word8 -> Word32 -> t -> CodeGen e s ()
+x86_mov_reg_mem :: (Eq t, Num t) => Word8 -> Word32 -> t -> CodeGen e s ()
 x86_mov_reg_mem reg mem size =        
     do x86_mov2 size
        x86_mem_emit reg mem   
 
-x86_mov_reg_membase :: (Num t) => Word8 -> Word8 -> Word32 -> t -> CodeGen e s ()
+x86_mov_reg_membase :: (Eq t, Num t) => Word8 -> Word8 -> Word32 -> t -> CodeGen e s ()
 x86_mov_reg_membase reg basereg disp size =
     do x86_mov2 size
        x86_membase_emit reg basereg disp      
 
-x86_mov_reg_memindex :: (Num t) => Word8 -> Word8 -> Word32 -> Word8 -> Word8 -> t -> CodeGen e s ()
+x86_mov_reg_memindex :: (Eq t, Num t) => Word8 -> Word8 -> Word32 -> Word8 -> Word8 -> t -> CodeGen e s ()
 x86_mov_reg_memindex _ _ _ 4 _ _ =
     failCodeGen $ PP.text "x86_mov_reg_memindex: cannot use (E)SP as index register"
 x86_mov_reg_memindex reg basereg disp indexreg shft size =   
@@ -933,7 +933,7 @@ x86_mov_reg_imm :: Word8 -> Word32 -> CodeGen e s ()
 x86_mov_reg_imm reg imm =     
     emit8 (0xb8 + reg) >> x86_imm_emit32 imm  
 
-x86_mov_mem_imm :: (Num a) => Word32 -> Word32 -> a -> CodeGen e s ()
+x86_mov_mem_imm :: (Eq a, Num a) => Word32 -> Word32 -> a -> CodeGen e s ()
 x86_mov_mem_imm mem imm size =        
     if size == 1
        then do emit8 0xc6;    
@@ -948,7 +948,7 @@ x86_mov_mem_imm mem imm size =
                        x86_mem_emit 0 mem     
                        x86_imm_emit32 imm     
 
-x86_mov_membase_imm :: (Num a) => Word8 -> Word32 -> Word32 -> a -> CodeGen e s ()
+x86_mov_membase_imm :: (Eq a, Num a) => Word8 -> Word32 -> Word32 -> a -> CodeGen e s ()
 x86_mov_membase_imm basereg disp imm size =   
     if size == 1
        then do emit8 0xc6     
@@ -963,7 +963,7 @@ x86_mov_membase_imm basereg disp imm size =
                        x86_membase_emit 0 basereg disp        
                        x86_imm_emit32 imm     
 
-x86_mov_memindex_imm :: (Num a) => Word8 -> Word32 -> Word8 -> Word8 -> Word32 -> a -> CodeGen e s ()
+x86_mov_memindex_imm :: (Eq a, Num a) => Word8 -> Word32 -> Word8 -> Word8 -> Word32 -> a -> CodeGen e s ()
 x86_mov_memindex_imm basereg disp indexreg shft imm size =   
     if size == 1
     then do emit8 0xc6        
@@ -1429,7 +1429,7 @@ x86_fptan   = emit8 0xd9 >> emit8 0xf2
 
 -- Fast instruction sequences for 1 to 7-byte noops.
 
-x86_padding ::(Num t) => t -> CodeGen e s ()
+x86_padding :: (Eq t, Num t) => t -> CodeGen e s ()
 x86_padding size =    
     case size of
       1 -> x86_nop
@@ -1489,38 +1489,38 @@ x86_epilog reg_mask =
 
 -- TODO: Move signatures to definition, delete duplicates.
 x86_xchg_reg_reg ::
-  (Num a) =>
+  (Eq a, Num a) =>
   Word8
   -> Word8
   -> a
   -> CodeGen e s ()
 x86_xchg_mem_reg ::
-  (Num a) =>
+  (Eq a, Num a) =>
   Word32
   -> Word8
   -> a
   -> CodeGen e s ()
 x86_xchg_membase_reg ::
-  (Num a) =>
+  (Eq a, Num a) =>
   Word8
   -> Word32
   -> Word8
   -> a
   -> CodeGen e s ()
 x86_xadd_reg_reg ::
-  (Num a) =>
+  (Eq a, Num a) =>
   Word8
   -> Word8
   -> a
   -> CodeGen e s ()
 x86_xadd_mem_reg ::
-  (Num a) =>
+  (Eq a, Num a) =>
   Word32
   -> Word8
   -> a
   -> CodeGen e s ()
 x86_xadd_membase_reg ::
-  (Num a) =>
+  (Eq a, Num a) =>
   Word8
   -> Word32
   -> Word8
