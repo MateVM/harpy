@@ -15,8 +15,10 @@
 ----------------------------------------------------------------------------
 module Harpy(module Harpy.CodeGenMonad,
              module Harpy.Call,
-             module Harpy.X86Assembler) where
+             module Harpy.X86Assembler,
+             module Control.Monad.Trans) where
 
 import Harpy.CodeGenMonad
 import Harpy.Call
 import Harpy.X86Assembler
+import Control.Monad.Trans
