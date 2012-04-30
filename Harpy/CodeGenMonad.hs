@@ -86,6 +86,7 @@ import Numeric
 import Data.List
 import qualified Data.Map as Map
 import Foreign
+import Foreign.C.Types
 import System.IO
 
 import Control.Monad.Trans
@@ -225,6 +226,12 @@ runCodeGen :: CodeGen e s a -> e -> s -> IO (s, Either ErrMsg a)
 runCodeGen cg uenv ustate =
     runCodeGenWithConfig cg uenv ustate defaultCodeGenConfig
 
+foreign import ccall "static stdlib.h"
+  memalign :: CUInt -> CUInt -> IO (Ptr a)
+
+foreign import ccall "static sys/mman.h"
+  mprotect :: CUInt -> CUInt -> Int -> IO Int
+
 -- | Like 'runCodeGen', but allows more control over the code
 -- generation process.  In addition to a code generator and a user
 -- environment and state, a code generation configuration must be
@@ -234,7 +241,10 @@ runCodeGenWithConfig :: CodeGen e s a -> e -> s -> CodeGenConfig -> IO (s, Eithe
 runCodeGenWithConfig (CodeGen cg) uenv ustate conf =
     do (buf, sze) <- case customCodeBuffer conf of
                        Nothing -> do let initSize = codeBufferSize conf
-                                     arr <- mallocBytes initSize
+                                     let size = fromIntegral initSize
+                                     arr <- memalign 0x1000 size
+                                     -- 0x7 = PROT_{READ,WRITE,EXEC}
+                                     _ <- mprotect (fromIntegral $ ptrToIntPtr arr) size 0x7
                                      return (arr, initSize)
                        Just (buf, sze) -> return (buf, sze)
        let env = CodeGenEnv {tailContext = True}
