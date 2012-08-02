@@ -525,9 +525,12 @@ disassemble = do
  where insertLabels :: [Dis.Instruction] -> CodeGen e s [Dis.Instruction]
        insertLabels = liftM concat . mapM ins
        ins :: Dis.Instruction -> CodeGen e s [Dis.Instruction]
-       ins i@(Dis.BadInstruction{}) = return [i]
+       ins i@(Dis.BadInstruction _ _ addr _) = insWithLabel i addr
        ins i@(Dis.PseudoInstruction{}) = return [i]
-       ins i@(Dis.Instruction{Dis.address = addr}) =
+       ins i@(Dis.Instruction{Dis.address = addr}) = insWithLabel i addr
+
+       insWithLabel :: Dis.Instruction -> Int -> CodeGen e s [Dis.Instruction]
+       insWithLabel i addr =
            do state <- getInternalState
               let allLabs = Map.toList (definedLabels state)
                   labs = filter (\ (_, (buf, ofs, _)) -> fromIntegral (ptrToWordPtr (buf `plusPtr` ofs)) == addr) allLabs
