@@ -232,6 +232,14 @@ foreign import ccall "static stdlib.h"
 foreign import ccall "static sys/mman.h"
   mprotect :: CUInt -> CUInt -> Int -> IO Int
 
+mallocExecBytes :: Int -> IO (Ptr a)
+mallocExecBytes size' = do
+    arr <- memalign 0x1000 size
+    -- 0x7 = PROT_{READ,WRITE,EXEC}
+    _ <- mprotect (fromIntegral $ ptrToIntPtr arr) size 0x7
+    return arr
+  where size = fromIntegral size'
+
 -- | Like 'runCodeGen', but allows more control over the code
 -- generation process.  In addition to a code generator and a user
 -- environment and state, a code generation configuration must be
@@ -241,10 +249,7 @@ runCodeGenWithConfig :: CodeGen e s a -> e -> s -> CodeGenConfig -> IO (s, Eithe
 runCodeGenWithConfig (CodeGen cg) uenv ustate conf =
     do (buf, sze) <- case customCodeBuffer conf of
                        Nothing -> do let initSize = codeBufferSize conf
-                                     let size = fromIntegral initSize
-                                     arr <- memalign 0x1000 size
-                                     -- 0x7 = PROT_{READ,WRITE,EXEC}
-                                     _ <- mprotect (fromIntegral $ ptrToIntPtr arr) size 0x7
+                                     arr <- mallocExecBytes initSize
                                      return (arr, initSize)
                        Just (buf, sze) -> return (buf, sze)
        let env = CodeGenEnv {tailContext = True}
@@ -291,7 +296,7 @@ ensureBufferSize needed =
          Nothing ->
              unless (bufferOfs state + needed + 5 <= bufferSize state)
                         (do let incrSize = max (needed + 16) (codeBufferSize (config state))
-                            arr <- liftIO $ mallocBytes incrSize
+                            arr <- liftIO $ mallocExecBytes incrSize
                             ofs <- getCodeOffset
                             let buf = buffer state
                                 disp :: Int
