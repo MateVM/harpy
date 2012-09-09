@@ -173,6 +173,9 @@ instance Monad (CodeGen e s) where
     fail err = cgFail err
     m >>= k = cgBind m k
 
+instance Functor (CodeGen e s) where
+  fmap = liftM
+
 cgReturn :: a -> CodeGen e s a
 cgReturn x = CodeGen (\_env state -> return (state, Right x))
 
