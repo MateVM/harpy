@@ -3914,6 +3914,10 @@ instance Movss XMMReg XMMReg where
 instance Movss XMMReg Addr where
     movss (XMMReg xd) (Addr a) = ensureBufferSize x86_max_instruction_bytes >> x86_mov_sse_reg_mem x86_sse_ss xd a
 
+instance Movss XMMReg Label where
+    movss (XMMReg xd) lab = do ensureBufferSize x86_max_instruction_bytes >> x86_mov_sse_reg_mem x86_sse_ss xd 0
+                               emitFixup lab (-4) Fixup32Absolute
+
 instance Movss Addr XMMReg where
     movss (Addr a) (XMMReg xd) = ensureBufferSize x86_max_instruction_bytes >> x86_mov_sse_mem_reg x86_sse_ss a xd
 
